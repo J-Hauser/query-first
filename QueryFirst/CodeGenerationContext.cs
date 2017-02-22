@@ -16,7 +16,12 @@ namespace QueryFirst
     {
         protected TinyIoCContainer tiny;
         private PutCodeHere _putCodeHere;
-        public PutCodeHere PutCodeHere { get { return _putCodeHere; } }
+        public PutCodeHere PutCodeHere {
+            get {
+                // resolving the target project item for code generation. We know the file name, we loop through child items of the query til we find it.
+                return _putCodeHere ?? ( _putCodeHere = new PutCodeHere(Conductor.GetItemByFilename(queryDoc.ProjectItem.ProjectItems, GeneratedClassFullFilename)));
+            }
+        }
         protected DTE dte;
         public DTE Dte { get { return dte; } }
         protected Document queryDoc;
@@ -216,8 +221,6 @@ namespace QueryFirst
             query = new Query(this);
             provider = tiny.Resolve<IProvider>(DesignTimeConnectionString.v.ProviderName);
             provider.Initialize(DesignTimeConnectionString.v);
-            // resolving the target project item for code generation. We know the file name, we loop through child items of the query til we find it.
-            _putCodeHere = new PutCodeHere(Conductor.GetItemByFilename(queryDoc.ProjectItem.ProjectItems, GeneratedClassFullFilename));
 
 
             string currDir = Path.GetDirectoryName(queryDoc.FullName);

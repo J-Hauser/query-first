@@ -14,6 +14,10 @@ using System.Drawing;
 using TinyIoC;
 using System.Timers;
 using QueryFirst.TypeMappings;
+using Microsoft.VisualStudio.Data.Tools;
+using Microsoft.VisualStudio.Data.Tools.Package.UI;
+using System.Data.SqlClient;
+using Microsoft.VisualStudio.Data.Tools.Package.Explorers.SqlServerObjectExplorer;
 
 namespace QueryFirst
 {
@@ -34,6 +38,7 @@ namespace QueryFirst
         private EnvDTE.Events myEvents;
         private EnvDTE.DocumentEvents myDocumentEvents;
         ProjectItemsEvents CSharpProjectItemsEvents;
+        private DateTime? _objectExplorerLastSynced;
         #endregion
         // constructor
         private Root(DTE dte)
@@ -120,30 +125,40 @@ namespace QueryFirst
             }
         }
 
-        private void MyDocumentEvents_DocumentOpened(Document Document)
+        private void MyDocumentEvents_DocumentOpened(Document document)
         {
-            if (Document.FullName.EndsWith(".sql"))
+            try
             {
-                var textDoc = ((TextDocument)Document.Object());
-                textDoc.ReplacePattern("/*designTime", "-- designTime");
-                textDoc.ReplacePattern("endDesignTime*/", "-- endDesignTime");
-                // backward compatibility
-                textDoc.ReplacePattern("--designTime", "-- designTime");
-                textDoc.ReplacePattern("--endDesignTime", "-- endDesignTime");
+                if (document.FullName.EndsWith(".sql"))
+                {
+                    RegisterTypes();
+                    var ctx = new CodeGenerationContext(document);
+                    if (ctx.Query.IsQFQuery())
+                    {
+                        var textDoc = ((TextDocument)document.Object());
+                        textDoc.ReplacePattern("/*designTime", "-- designTime");
+                        textDoc.ReplacePattern("endDesignTime*/", "-- endDesignTime");
+                        // backward compatibility
+                        textDoc.ReplacePattern("--designTime", "-- designTime");
+                        textDoc.ReplacePattern("--endDesignTime", "-- endDesignTime");
+                        var designTimeConnectionString = ctx.DesignTimeConnectionString;
+                        //var oeas = DataPackage.Instance.GetService<ISqlServerObjectExplorerActionService>(typeof(ISqlServerObjectExplorerActionService));
+                        ISqlServerObjectExplorerService service = DataPackage.Instance.GetService<ISqlServerObjectExplorerService>(typeof(ISqlServerObjectExplorerService));
+                        
+                        // this method getting called 7 times for a given file ???
+                        if (service != null && _objectExplorerLastSynced == null || (DateTime.Now - _objectExplorerLastSynced.Value).Seconds > 10 )
+                        {
+                            service.Browse(new SqlConnectionStringBuilder(designTimeConnectionString.v.ConnectionString));
+                            //service.OpenQuery(new SqlConnectionStringBuilder(designTimeConnectionString.v.ConnectionString));
+                            _objectExplorerLastSynced = DateTime.Now;
+                        }
 
-
-                // never got close to working. cost me 50 points on stack. just saw it open the window????
-                //try
-                //{
-                //    if (_dte.Commands.Item("SQL.TSqlEditorConnect") != null && _dte.Commands.Item("SQL.TSqlEditorConnect").IsAvailable)
-                //    {
-                //        _dte.ExecuteCommand("SQL.TSqlEditorConnect");
-                //    }
-                //    //_dte.ExecuteCommand("SQL.TSqlEditorConnect", "Data Source=not-mobility;Initial Catalog=NORTHWND;Integrated Security=SSPI;");
-                //}
-                //catch (Exception ex) { }
-
-
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToVSOutputWindow(ex.TellMeEverything());
             }
         }
         private void HandleTimer(Object source, System.Timers.ElapsedEventArgs e)
@@ -166,7 +181,7 @@ namespace QueryFirst
                 var ctr = TinyIoCContainer.Current;
                 LogToVSOutputWindow("Registering types...\n");
                 //kludge
-                if(force == true)
+                if (force == true)
                 {
                     ctr.Dispose();
                 }

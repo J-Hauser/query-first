@@ -23,6 +23,8 @@ namespace QueryFirst
 
         public Conductor(Document queryDoc)
         {
+            if (queryDoc == null)
+                throw new ArgumentNullException("queryDoc");
             ctx = new CodeGenerationContext(queryDoc);
             _tiny = TinyIoCContainer.Current;
 
@@ -33,7 +35,6 @@ namespace QueryFirst
             if (GetItemByFilename(queryDoc.ProjectItem.Collection, ctx.GeneratedClassFullFilename) != null)
                 queryDoc.ProjectItem.Collection.AddFromFile(ctx.GeneratedClassFullFilename);
             // copy namespace of generated partial class from user partial class
-
         }
         public bool IsQFQuery()
         {
@@ -97,6 +98,7 @@ The query {1} may not run and the wrapper has not been regenerated.",
                 {
 
                     // Execute query
+                    bool spFindUndeclaredThrew = false;
                     try
                     {
                         // also called in the bowels of schema fetching, for Postgres, because no notion of declarations.
@@ -111,10 +113,12 @@ The query {1} may not run and the wrapper has not been regenerated.",
                         }
                         catch (SqlException ex)
                         {
-                            LogToVSOutputWindow("Unable to find undeclared parameters. You will have to do this yourself.");
+                            // sp_find_undeclared_parameters might be unavailable, or the query might be invalid.
+                            spFindUndeclaredThrew = true;
                         }
 
                         ctx.ResultFields = ctx.Hlpr.GetFields(ctx.DesignTimeConnectionString.v, ctx.Query.Text);
+                        
                     }
                     catch (Exception ex)
                     {
@@ -129,7 +133,10 @@ The query {1} may not run and the wrapper has not been regenerated.",
                         bldr.AppendLine(ex.StackTrace);
                         bldr.AppendLine("*/");
                         File.AppendAllText(ctx.GeneratedClassFullFilename, bldr.ToString());
-                        throw;
+                        if(spFindUndeclaredThrew)
+                            LogToVSOutputWindow("Unable to find undeclared parameters. You will have to declare them yourself.\n");
+                        LogToVSOutputWindow(ex.TellMeEverything());
+                        return;                        
                     }
                     ctx.QueryHasRun = true;
                     StringBuilder Code = new StringBuilder();
