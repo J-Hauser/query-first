@@ -57,16 +57,20 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BackwardCompatibility.cs" />
+    <Compile Include="DesignTimeConnectionString.cs" />
+    <Compile Include="MS\ISqlServerObjectExplorerService.cs" />
+    <Compile Include="MS\ISqlServerObjectExplorerService2.cs" />
     <Compile Include="Providers\IProvider.cs" />
-    <Compile Include="Providers\MySql.cs" />
-    <Compile Include="Providers\Postgres.cs" />
+    <Compile Include="Providers\MySqlClient.cs" />
+    <Compile Include="Providers\Npgsql.cs" />
     <Compile Include="Providers\sp_describe_undeclared_parameters.gen.cs">
       <DependentUpon>sp_describe_undeclared_parameters.sql</DependentUpon>
     </Compile>
     <Compile Include="Providers\sp_describe_undeclared_parametersResults.cs">
       <DependentUpon>sp_describe_undeclared_parameters.sql</DependentUpon>
     </Compile>
-    <Compile Include="Providers\SqlServer.cs" />
+    <Compile Include="Providers\SqlClient.cs" />
     <Compile Include="SchemaFetching\AdoSchemaFetcher.cs" />
     <Compile Include="CodeGenerationContext.cs" />
     <Compile Include="ConfigurationAccessor.cs" />
@@ -76,12 +80,6 @@
     </Compile>
     <Compile Include="InsertsAndUpdates\ScaffoldUpdateResults.cs">
       <DependentUpon>ScaffoldUpdate.sql</DependentUpon>
-    </Compile>
-    <Compile Include="Inserts\GenerateInsert.gen.cs">
-      <DependentUpon>GenerateInsert.sql</DependentUpon>
-    </Compile>
-    <Compile Include="Inserts\GenerateInsertResults.cs">
-      <DependentUpon>GenerateInsert.sql</DependentUpon>
     </Compile>
     <Compile Include="IQueryParamInfo.cs" />
     <Compile Include="ISignatureMaker.cs" />
@@ -132,7 +130,6 @@
     <VSCTCompile Include="QueryFirstCmdPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
-    <EmbeddedResource Include="Inserts\GenerateInsert.sql" />
     <EmbeddedResource Include="InsertsAndUpdates\ScaffoldUpdate.sql" />
     <EmbeddedResource Include="Providers\sp_describe_undeclared_parameters.sql" />
     <Content Include="ReadMe.txt" />
@@ -159,6 +156,10 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.CommandBars, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Data, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Data.Tools.Package">
+      <HintPath>..\..\..\..\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Extensions\Microsoft\SQLDB\Microsoft.VisualStudio.Data.Tools.Package.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Imaging, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Imaging.14.1.24720\lib\net45\Microsoft.VisualStudio.Imaging.dll</HintPath>
